@@ -102,14 +102,14 @@ int main(int argc, char **argv)
 
 		prs::bubble bub;
 		bub.load_prs(pr, v);
-		string dot = bub.export_bubble(v).to_string();
+		string dot = export_bubble(bub, v).to_string();
 		FILE *file = fopen("before.dot", "w");
 		fprintf(file, "%s\n", dot.c_str());
 		fclose(file);
 		
 		bub.reshuffle(v);
 	
-		dot = bub.export_bubble(v).to_string();
+		dot = export_bubble(bub, v).to_string();
 		file = fopen("after.dot", "w");
 		fprintf(file, "%s\n", dot.c_str());
 		fclose(file);
