@@ -1,0 +1,8 @@
+*.dot
+*.png
+*.prs
+*.log
+*.o
+*.a
+*.so
+bubble
