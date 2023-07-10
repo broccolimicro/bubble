@@ -174,8 +174,8 @@ int main(int argc, char **argv)
 			save_bubble(oformat, step++, bub, v);
 		}
 		for (auto i = bub.net.begin(); i != bub.net.end(); i++) {
-			bub.step(i);
-			if (render_steps) {
+			pair<int, bool> result = bub.step(i);
+			if (render_steps && result.second) {
 				save_bubble(oformat, step++, bub, v);
 			}
 		}
