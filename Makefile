@@ -1,24 +1,51 @@
-CXXFLAGS	 =  -O2 -g -Wall -fmessage-length=0
-SOURCES	    :=  $(shell find src -name '*.cpp')
-OBJECTS	    :=  $(SOURCES:src/%.cpp=build/%.o)
-DIRECTORIES :=  $(sort $(dir $(OBJECTS)))
-LDFLAGS		 =  
+NAME          = bubble
+DEPEND        = prs interpret_prs interpret_boolean interpret_ucs boolean ucs parse_dot parse_prs parse_expression parse_ucs parse common
 
-INCLUDE_PATHS	= -I../../lib/common -I../../lib/parse -I../../lib/parse_ucs -I../../lib/parse_expression -I../../lib/parse_prs -I../../lib/parse_dot -I../../lib/ucs -I../../lib/boolean -I../../lib/prs -I../../lib/interpret_ucs -I../../lib/interpret_boolean -I../../lib/interpret_prs
-LIBRARY_PATHS	= -L../../lib/common -L../../lib/parse -L../../lib/parse_ucs -L../../lib/parse_expression -L../../lib/parse_prs -L../../lib/parse_dot -L../../lib/ucs -L../../lib/boolean -L../../lib/prs -L../../lib/interpret_ucs -L../../lib/interpret_boolean -L../../lib/interpret_prs
-LIBRARIES		= -lprs -linterpret_prs -linterpret_boolean -linterpret_ucs -lboolean -lucs -lparse_dot -lparse_prs -lparse_expression -lparse_ucs -lparse -lcommon
-TARGET		 =  bubble
+SRCDIR        = src
+TESTDIR       = tests
+GTEST        := ../../googletest
+GTEST_I      := -I$(GTEST)/googletest/include -I.
+GTEST_L      := -L$(GTEST)/build/lib -L.
 
-all: build $(TARGET)
+INCLUDE_PATHS = $(DEPEND:%=-I../../lib/%) -I.
+LIBRARY_PATHS = $(DEPEND:%=-L../../lib/%) -I.
+LIBRARIES     = $(DEPEND:%=-l%)
+CXXFLAGS	    = -O2 -g -Wall -fmessage-length=0
+LDFLAGS		    =  
+
+SOURCES	     := $(shell mkdir -p $(SRCDIR); find $(SRCDIR) -name '*.cpp')
+OBJECTS	     := $(SOURCES:%.cpp=build/%.o)
+DEPS         := $(shell mkdir -p build/$(SRCDIR); find build/$(SRCDIR) -name '*.d')
+TARGET		    = $(NAME)
+
+TESTS        := $(shell mkdir -p tests; find $(TESTDIR) -name '*.cpp')
+TEST_OBJECTS := $(TESTS:%.cpp=build/%.o) build/$(TESTDIR)/gtest_main.o
+TEST_DEPS    := $(shell mkdir -p build/$(TESTDIR); find build/$(TESTDIR) -name '*.d')
+TEST_TARGET   = test
+
+all: $(TARGET)
 
 $(TARGET): $(OBJECTS)
-	$(CXX) $(LIBRARY_PATHS) $(CXXFLAGS) $(LDFLAGS) $(OBJECTS) -o $(TARGET) $(LIBRARIES)
+	$(CXX) $(LIBRARY_PATHS) $(CXXFLAGS) $(OBJECTS) -o $(TARGET) $(LIBRARIES)
 
-build/%.o: src/%.cpp 
-	$(CXX) $(INCLUDE_PATHS) $(CXXFLAGS) $(LDFLAGS) -c -o $@ $<
-	
-build:
-	mkdir $(DIRECTORIES)
+build/$(SRCDIR)/%.o: $(SRCDIR)/%.cpp 
+	@mkdir -p $(dir $@)
+	@$(CXX) $(CXXFLAGS) $(LDFLAGS) $(INCLUDE_PATHS) -MM -MF $(patsubst %.o,%.d,$@) -MT $@ -c $<
+	$(CXX) $(CXXFLAGS) $(LDFLAGS) $(INCLUDE_PATHS) -c -o $@ $<
+
+$(TEST_TARGET): $(TEST_OBJECTS) $(filter-out build/$(SRCDIR)/main.o, $(OBJECTS))
+	$(CXX) $(LIBRARY_PATHS) $(CXXFLAGS) $(GTEST_L) $(INCLUDE_PATHS) $^ -pthread -lgtest -o $(TEST_TARGET) $(LIBRARIES)
+
+build/$(TESTDIR)/%.o: $(TESTDIR)/%.cpp
+	@mkdir -p $(dir $@)
+	@$(CXX) $(CXXFLAGS) $(GTEST_I) $(INCLUDE_PATHS) -MM -MF $(patsubst %.o,%.d,$@) -MT $@ -c $<
+	$(CXX) $(CXXFLAGS) $(GTEST_I) $(INCLUDE_PATHS) $< -c -o $@
+
+build/$(TESTDIR)/gtest_main.o: $(GTEST)/googletest/src/gtest_main.cc
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXFLAGS) $(GTEST_I) $< -c -o $@
+
+include $(DEPS) $(TEST_DEPS)
 
 clean:
-	rm -f $(OBJECTS) $(TARGET) $(TARGET).exe
+	rm -rf build $(TARGET) $(TEST_TARGET)
