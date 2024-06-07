@@ -1,5 +1,5 @@
 NAME          = bubble
-DEPEND        = prs interpret_prs interpret_boolean interpret_ucs boolean ucs parse_dot parse_prs parse_expression parse_ucs parse common
+DEPEND        = prs interpret_prs interpret_boolean interpret_ucs boolean ucs parse_spice parse_dot parse_prs parse_expression parse_ucs parse common
 
 SRCDIR        = src
 TESTDIR       = tests
